@@ -16,6 +16,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Configuration;
 using Oanea_George_Lab6;
+using PhoneBookModel;
 
 namespace Oanea_George_Lab6
 {
@@ -32,15 +33,22 @@ namespace Oanea_George_Lab6
     }
     public partial class MainWindow : Window
     {
+        PhoneNumbersEntities ctx;
+        IQueryable<PhoneNumber> queryPhoneNumbers;
+        CollectionViewSource phoneNumbersView;
         ActionState action = ActionState.Nothing;
         Binding txtPhoneNumberBinding = new Binding(); 
         Binding txtSubscriberBinding = new Binding();
         public MainWindow()
         {
             InitializeComponent();
+            ctx = new PhoneNumbersEntities();
+            queryPhoneNumbers = (from p in ctx.PhoneNumbers select p);
             txtPhoneNumberBinding.Path = new PropertyPath("Phonenum"); 
             txtSubscriberBinding.Path = new PropertyPath("Subscriber"); 
             txtPhoneNumber.SetBinding(TextBox.TextProperty, txtPhoneNumberBinding); txtSubscriber.SetBinding(TextBox.TextProperty, txtSubscriberBinding);
+            phoneNumbersView = ((CollectionViewSource)(this.FindResource("phoneNumbersViewSource")));
+            phoneNumbersView.Source = queryPhoneNumbers.ToList();
         }
 
         private void btnExit_Click(object sender, RoutedEventArgs e)
@@ -50,17 +58,10 @@ namespace Oanea_George_Lab6
                 this.Close();
             }
         }
-
         private void frmMain_Loaded(object sender, RoutedEventArgs e)
         {
-            System.Windows.Data.CollectionViewSource phoneNumbersViewSource =((System.Windows.Data.CollectionViewSource)(this.FindResource("phoneNumbersViewSource")));
-            phoneNumbersViewSource.View.MoveCurrentToFirst();
+            phoneNumbersView.View.MoveCurrentToFirst();
         }
-
-        private void grdMain_Loaded(object sender, RoutedEventArgs e)
-        {
-        }
-
         private void btnNew_Click(object sender, RoutedEventArgs e)
         {
             action = ActionState.New;
@@ -147,11 +148,119 @@ namespace Oanea_George_Lab6
         }
         private void btnSave_Click(object sender, RoutedEventArgs e)
         {
+            PhoneNumber phoneNumber = null;
+            if (action == ActionState.New)
+            {
+                try
+                {
+                    //instantiem phoneNumber entity
+                    phoneNumber = new PhoneNumber()
+                    {
+                        Phonenum = txtPhoneNumber.Text.Trim(),
+                        Subscriber = txtSubscriber.Text.Trim()
+                    };
+                    //adaugam entitatea nou creata in context
+                    ctx.PhoneNumbers.Add(phoneNumber);
+                    //salvam modificarile
+                    ctx.SaveChangesClientWins();
+                }
+                catch (DataException ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                btnNew.IsEnabled = true;
+                btnEdit.IsEnabled = true;
+                btnSave.IsEnabled = false;
+                btnCancel.IsEnabled = false;
+                btnDelete.IsEnabled = true;
+                lstPhones.IsEnabled = true;
+                btnPrevious.IsEnabled = true;
+                btnNext.IsEnabled = true;
+                txtPhoneNumber.IsEnabled = false;
+                txtSubscriber.IsEnabled = false;
+            }
+            else if (action == ActionState.Edit)
+                {
+                    try
+                    {
+                        phoneNumber = (PhoneNumber)lstPhones.SelectedItem;
+                        phoneNumber.Phonenum = txtPhoneNumber.Text.Trim();
+                        phoneNumber.Subscriber = txtSubscriber.Text.Trim();
+                        //salvam modificarile
+                        ctx.SaveChangesClientWins();
+                        //ctx.SaveChangesDatabaseStoreWins();
+                    }
+                catch (DataException ex)
+                    {
+                        MessageBox.Show(ex.Message);
+                    }
+                    phoneNumbersView.Source = queryPhoneNumbers.ToList();
+                    // pozitionarea pe item-ul curent
+                    if (phoneNumber != null)
+                    {
+                        lstPhones.SelectedIndex = queryPhoneNumbers.ToList().FindIndex(p => p.Id == phoneNumber.Id);
+                    }
+                    btnNew.IsEnabled = true;
+                    btnEdit.IsEnabled = true;
+                    btnSave.IsEnabled = false;
+                    btnCancel.IsEnabled = false;
+                    btnDelete.IsEnabled = true;
+                    lstPhones.IsEnabled = true;
+                    btnPrevious.IsEnabled = true;
+                    btnNext.IsEnabled = true;
+                    txtPhoneNumber.IsEnabled = false;
+                    txtSubscriber.IsEnabled = false;
+                    txtPhoneNumber.SetBinding(TextBox.TextProperty, txtPhoneNumberBinding);
+                    txtSubscriber.SetBinding(TextBox.TextProperty, txtSubscriberBinding);
+                }
+            else if (action == ActionState.Delete)
+            {
+                try
+                {
+                    phoneNumber = (PhoneNumber)lstPhones.SelectedItem;
+                    ctx.PhoneNumbers.Remove(phoneNumber);
+                    ctx.SaveChanges();
+                }
+                catch (DataException ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                phoneNumbersView.Source = queryPhoneNumbers.ToList();
+                btnNew.IsEnabled = true;
+                btnEdit.IsEnabled = true;
+                btnSave.IsEnabled = false;
+                btnCancel.IsEnabled = false;
+                lstPhones.IsEnabled = true;
+                btnPrevious.IsEnabled = true;
+                btnNext.IsEnabled = true;
+                txtPhoneNumber.IsEnabled = false;
+                txtSubscriber.IsEnabled = false;
+                txtPhoneNumber.SetBinding(TextBox.TextProperty, txtPhoneNumberBinding);
+                txtSubscriber.SetBinding(TextBox.TextProperty, txtSubscriberBinding);
+            }
+            
+            // pozitionarea pe item-ul curent
+            if (phoneNumber != null)
+            {
+                lstPhones.SelectedIndex = queryPhoneNumbers.ToList().FindIndex(p => p.Id == phoneNumber.Id);
+            }
+            btnNew.IsEnabled = true;
+            btnEdit.IsEnabled = true;
+            btnSave.IsEnabled = false;
+            btnCancel.IsEnabled = false;
+            btnDelete.IsEnabled = true;
+            lstPhones.IsEnabled = true;
+            btnPrevious.IsEnabled = true;
+            btnNext.IsEnabled = true;
+            txtPhoneNumber.IsEnabled = false;
+            txtSubscriber.IsEnabled = false;
+            txtPhoneNumber.SetBinding(TextBox.TextProperty, txtPhoneNumberBinding);
+            txtSubscriber.SetBinding(TextBox.TextProperty, txtSubscriberBinding);
 
         }
         private void btnNext_Click(object sender, RoutedEventArgs e)
         {
-
+            phoneNumbersView.View.MoveCurrentToNext();
         }
         private void btnPrevious_Click(object sender, RoutedEventArgs e)
         {

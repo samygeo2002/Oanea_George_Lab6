@@ -17,8 +17,9 @@
                 <TextBlock Text="{Binding Subscriber}" Grid.Column="1"/>
             </Grid>
         </DataTemplate>
+        <CollectionViewSource x:Key="phoneNumbersViewSource" Source="{Binding}"/>
     </Window.Resources>
-    <Grid x:Name="grdMain" Loaded="grdMain_Loaded">
+    <Grid x:Name="grdMain" DataContext="{StaticResource phoneNumbersViewSource}">
         <Button Name="btnNew" Content="New" Margin="50,63,642,576" Width="100" Height="30" Click="btnNew_Click"/>
         <Button Name="btnEdit" Content="Edit" Margin="50,150,642,489" Width="100" Height="30" Click="btnEdit_Click"/>
         <Button Name="btnDelete" Content="Delete" Margin="50,237,642,402" Width="100" Height="30" Click="btnDelete_Click"/>
